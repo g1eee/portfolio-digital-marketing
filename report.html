@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Report viewer · Gifar Rahmatilah</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FF6A00'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='system-ui,-apple-system,Segoe UI,Roboto' font-weight='800' font-size='34' fill='white' dominant-baseline='middle'%3EG%3C/text%3E%3C/svg%3E" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ink: { 950: "#0a0a0c", 900: "#0f1014", 800: "#15161c", 700: "#1d1f28" },
+              accent: { 500: "#FF6A00", 400: "#ff8a3a" },
+              violet2: { 500: "#7C3AED", 400: "#9b6bff" },
+            },
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui"],
+              display: ["'Space Grotesk'", "Inter", "system-ui"],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        background: #0a0a0c;
+        color: #fff;
+        height: 100%;
+      }
+      body {
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .grad-text {
+        background: linear-gradient(90deg, #ff6a00, #ff8a3a 35%, #7c3aed 90%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      /* viewer */
+      #pages {
+        scroll-behavior: smooth;
+      }
+      .page-shadow {
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+      }
+      /* discourage casual save: disable text selection in the canvas wrapper */
+      .nosel {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      /* hide print on page */
+      @media print {
+        body {
+          visibility: hidden !important;
+        }
+        body::after {
+          content: "Printing this report is disabled.";
+          visibility: visible;
+          display: block;
+          position: fixed;
+          inset: 0;
+          padding: 40px;
+          color: #000;
+          background: #fff;
+          font-family: system-ui;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- ==================== Top Bar ==================== -->
+    <header class="sticky top-0 z-40 backdrop-blur bg-ink-950/85 border-b border-white/10">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <a href="/" class="flex items-center gap-2 shrink-0">
+          <span class="inline-flex h-7 w-7 rounded-lg items-center justify-center bg-gradient-to-br from-accent-500 to-violet2-500 font-display font-bold text-sm">G</span>
+          <span class="font-display font-bold text-sm sm:text-base">Gifar.</span>
+        </a>
+        <h1 id="title" class="font-display font-semibold text-sm sm:text-base text-white/85 truncate flex-1 text-center"></h1>
+        <div id="toolbar" class="hidden items-center gap-1 sm:gap-2 shrink-0">
+          <button id="zoomOut" class="px-2 py-1 rounded-lg hover:bg-white/10 text-white/80" aria-label="Zoom out">−</button>
+          <span id="zoomLabel" class="text-xs tabular-nums text-white/60 w-10 text-center">100%</span>
+          <button id="zoomIn" class="px-2 py-1 rounded-lg hover:bg-white/10 text-white/80" aria-label="Zoom in">+</button>
+          <span class="hidden sm:inline-block w-px h-5 bg-white/10 mx-1"></span>
+          <span id="pageLabel" class="text-xs tabular-nums text-white/60 hidden sm:inline">– / –</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== Password Gate ==================== -->
+    <section id="gate" class="flex-1 flex items-center justify-center px-4 py-10">
+      <div class="w-full max-w-md rounded-3xl border border-white/10 bg-gradient-to-br from-accent-500/15 to-violet2-500/10 p-6 sm:p-8">
+        <p class="text-xs uppercase tracking-widest text-accent-400 mb-2">Private report</p>
+        <h2 id="gateTitle" class="font-display font-bold text-2xl mb-3">Akses dibatasi</h2>
+        <p class="text-white/70 text-sm leading-relaxed">
+          Laporan ini dienkripsi dan hanya bisa dibuka pakai password. Hubungi
+          <a href="mailto:gifar.rahmatilah@gmail.com" class="text-accent-400 underline underline-offset-4">Gifar</a>
+          kalau kamu butuh akses.
+        </p>
+        <form id="gateForm" class="mt-5 space-y-3">
+          <div>
+            <label class="block text-xs text-white/60 mb-1.5">Password</label>
+            <input
+              id="pwd"
+              type="password"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              class="w-full rounded-xl bg-ink-800 border border-white/10 focus:border-accent-500/60 focus:outline-none px-4 py-2.5 text-sm"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            id="gateSubmit"
+            class="w-full rounded-xl bg-gradient-to-r from-accent-500 to-violet2-500 px-5 py-2.5 font-medium text-sm hover:opacity-90 disabled:opacity-50"
+          >
+            Buka laporan
+          </button>
+          <p id="gateError" class="hidden text-sm text-red-400">Password salah. Coba lagi.</p>
+        </form>
+        <p class="mt-5 text-xs text-white/40">
+          Catatan: laporan ini bukti kerja saya untuk klien. Mohon tidak disebarkan ulang.
+        </p>
+      </div>
+    </section>
+
+    <!-- ==================== PDF Viewer ==================== -->
+    <main id="viewer" class="hidden flex-1 bg-ink-950">
+      <div id="pages" class="max-w-4xl mx-auto py-6 px-3 sm:px-6 space-y-6 nosel"></div>
+      <p class="text-center text-xs text-white/40 pb-10">— akhir laporan —</p>
+    </main>
+
+    <!-- ==================== Scripts ==================== -->
+    <script type="module">
+      // pdf.js (ESM build)
+      import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs";
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
+
+      // Brand title lookup (anonymized)
+      const REPORTS = {
+        atria:     { title: "Brand Furniture Premium · Maret 2026", file: "/reports/atria.enc" },
+        rtsr:      { title: "Brand Fashion Muslim · Maret 2026",     file: "/reports/rtsr.enc" },
+        chanira:   { title: "Brand Fashion Wanita · Maret 2026",     file: "/reports/chanira.enc" },
+        menliving: { title: "Brand Fashion Pria · Maret 2026",       file: "/reports/menliving.enc" },
+        goods:     { title: "Brand Footwear · Maret 2026",           file: "/reports/goods.enc" },
+        frscarves: { title: "Brand Modest Wear · Maret 2026",        file: "/reports/frscarves.enc" },
+      };
+
+      const params = new URLSearchParams(location.search);
+      const id = params.get("id");
+      const meta = id && REPORTS[id];
+      const titleEl = document.getElementById("title");
+      const gateTitleEl = document.getElementById("gateTitle");
+
+      if (!meta) {
+        titleEl.textContent = "Report tidak ditemukan";
+        gateTitleEl.textContent = "Report tidak ditemukan";
+        document.getElementById("gateForm").style.display = "none";
+        document.querySelector("#gate p").innerHTML =
+          "URL tidak valid. Kembali ke <a href='/' class='text-accent-400 underline'>halaman utama</a>.";
+      } else {
+        titleEl.textContent = meta.title;
+      }
+
+      // ========== AES-GCM decrypt ==========
+      async function decryptPdf(encBuf, password) {
+        const view = new Uint8Array(encBuf);
+        const salt = view.slice(0, 16);
+        const iv = view.slice(16, 28);
+        const ct = view.slice(28);
+        const enc = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey(
+          "raw",
+          enc.encode(password),
+          "PBKDF2",
+          false,
+          ["deriveKey"],
+        );
+        const aesKey = await crypto.subtle.deriveKey(
+          { name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" },
+          baseKey,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["decrypt"],
+        );
+        return await crypto.subtle.decrypt({ name: "AES-GCM", iv }, aesKey, ct);
+      }
+
+      // ========== Render pages ==========
+      let pdfDoc = null;
+      let scale = 1.5;
+      const pagesEl = document.getElementById("pages");
+      const toolbar = document.getElementById("toolbar");
+      const zoomLabel = document.getElementById("zoomLabel");
+      const pageLabel = document.getElementById("pageLabel");
+
+      async function renderAll() {
+        if (!pdfDoc) return;
+        pagesEl.innerHTML = "";
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const viewport = page.getViewport({ scale: scale * dpr });
+          const canvas = document.createElement("canvas");
+          canvas.className = "page-shadow rounded-md w-full h-auto bg-white block";
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          canvas.style.maxWidth = "100%";
+          // Cap CSS size so the canvas isn't huge; pixel density still scales
+          canvas.style.width = (viewport.width / dpr) + "px";
+          const ctx = canvas.getContext("2d");
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          pagesEl.appendChild(canvas);
+        }
+        zoomLabel.textContent = Math.round(scale * 100 / 1.5) + "%";
+        pageLabel.textContent = pdfDoc.numPages + " halaman";
+      }
+
+      // Zoom
+      document.getElementById("zoomIn").addEventListener("click", () => {
+        scale = Math.min(scale + 0.25, 3);
+        renderAll();
+      });
+      document.getElementById("zoomOut").addEventListener("click", () => {
+        scale = Math.max(scale - 0.25, 0.75);
+        renderAll();
+      });
+
+      // ========== Form submit ==========
+      const form = document.getElementById("gateForm");
+      const errEl = document.getElementById("gateError");
+      const submitBtn = document.getElementById("gateSubmit");
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!meta) return;
+        const password = document.getElementById("pwd").value;
+        errEl.classList.add("hidden");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Membuka…";
+        try {
+          const res = await fetch(meta.file, { cache: "no-store" });
+          if (!res.ok) throw new Error("File not found");
+          const encBuf = await res.arrayBuffer();
+          const pdfBuf = await decryptPdf(encBuf, password);
+          pdfDoc = await pdfjsLib.getDocument({ data: pdfBuf }).promise;
+          // Show viewer
+          document.getElementById("gate").classList.add("hidden");
+          document.getElementById("viewer").classList.remove("hidden");
+          toolbar.classList.remove("hidden");
+          toolbar.classList.add("flex");
+          await renderAll();
+        } catch (err) {
+          console.warn("Decrypt failed", err);
+          errEl.classList.remove("hidden");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Buka laporan";
+        }
+      });
+
+      // ========== Soft anti-download deterrents ==========
+      // (note: cannot truly prevent; just adds friction)
+      document.addEventListener("contextmenu", (e) => {
+        if (document.getElementById("viewer") && !document.getElementById("viewer").classList.contains("hidden")) {
+          e.preventDefault();
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        const viewerOpen = !document.getElementById("viewer").classList.contains("hidden");
+        if (!viewerOpen) return;
+        // block Ctrl/Cmd + S, Ctrl/Cmd + P
+        const k = e.key.toLowerCase();
+        if ((e.ctrlKey || e.metaKey) && (k === "s" || k === "p")) {
+          e.preventDefault();
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -64,25 +64,36 @@
 
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity .7s ease, transform .7s ease; }
   .reveal.visible { opacity: 1; transform: none; }
+  /* Fallback: if JS disabled or IntersectionObserver fails, content stays visible */
+  .no-js .reveal, html:not(.js-ready) .reveal { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
 
   @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   .marquee-track { animation: marquee 35s linear infinite; }
 
-  .noise::before {
-    content:""; position:absolute; inset:0; pointer-events:none; opacity:.06;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>");
-  }
 
   /* Mobile menu */
-  .mobile-menu { transition: opacity .25s ease, transform .25s ease; }
-  .mobile-menu.hidden-mm { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+  .mobile-menu {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height .3s ease, opacity .25s ease, transform .25s ease, border-color .25s ease;
+  }
+  .mobile-menu.hidden-mm {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    max-height: 0;
+    border-color: transparent;
+  }
 </style>
 </head>
 
 <body class="bg-ink-950 text-white antialiased selection:bg-accent-500 selection:text-white">
 
 <!-- ============== NAV ============== -->
-<header class="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-ink-950/60 border-b border-white/5">
+<header class="fixed top-0 inset-x-0 z-50 bg-ink-950/85 md:bg-ink-950/60 md:backdrop-blur-md border-b border-white/5">
   <nav class="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
     <a href="#home" class="flex items-center gap-2 group">
       <span class="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-accent-500 to-violet2-500 font-display font-bold">G</span>
@@ -104,7 +115,7 @@
       </button>
     </div>
   </nav>
-  <div id="mobile-menu" class="mobile-menu hidden-mm md:hidden border-t border-white/5 bg-ink-950/95 backdrop-blur">
+  <div id="mobile-menu" class="mobile-menu hidden-mm md:hidden border-t border-white/5 bg-ink-950/95">
     <ul class="px-5 py-4 grid gap-1 text-sm">
       <li><a class="block py-2 text-white/80" href="#about">About</a></li>
       <li><a class="block py-2 text-white/80" href="#services">Services</a></li>
@@ -117,12 +128,12 @@
 </header>
 
 <!-- ============== HERO ============== -->
-<section id="home" class="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-32 noise">
-  <div class="absolute inset-0 bg-grid [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]"></div>
-  <div class="absolute -top-32 -left-24 w-[520px] h-[520px] glow-orange blur-2xl"></div>
-  <div class="absolute -bottom-40 -right-24 w-[560px] h-[560px] glow-violet blur-2xl"></div>
+<section id="home" class="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-32">
+  <div class="absolute inset-0 bg-grid [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)] pointer-events-none" aria-hidden="true"></div>
+  <div class="absolute -top-32 -left-24 w-[280px] h-[280px] sm:w-[520px] sm:h-[520px] glow-orange blur-3xl pointer-events-none" aria-hidden="true"></div>
+  <div class="absolute -bottom-40 -right-24 w-[300px] h-[300px] sm:w-[560px] sm:h-[560px] glow-violet blur-3xl pointer-events-none" aria-hidden="true"></div>
 
-  <div class="relative max-w-7xl mx-auto px-5 sm:px-8">
+  <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8">
     <div class="reveal inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
       Currently @ Digivise Education — Performance Ads Shopee & CPAS
@@ -659,14 +670,19 @@
 </footer>
 
 <script>
+  document.documentElement.classList.add('js-ready');
   lucide.createIcons();
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // Reveal on scroll
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  // Reveal on scroll (with safe fallback if IntersectionObserver unavailable)
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -10% 0px' });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+  }
 
   // Mobile menu
   const mmBtn = document.getElementById('mm-toggle');
